@@ -16,6 +16,8 @@
 
   Written by Limor Fried/Ladyada for Adafruit Industries.  
   MIT license, all text above must be included in any redistribution
+
+  Code to flip numbers on 7-segment display written by Josh Richmond
  ****************************************************/
 #ifndef Adafruit_LEDBackpack_h
 #define Adafruit_LEDBackpack_h
@@ -156,10 +158,10 @@ class Adafruit_7segment : public Adafruit_LEDBackpack {
   void println(void);
   
   void writeDigitRaw(uint8_t x, uint8_t bitmask);
-  void writeDigitNum(uint8_t x, uint8_t num, boolean dot = false);
+  void writeDigitNum(uint8_t x, uint8_t num, boolean dot = false, bool flip = false);
   void drawColon(boolean state);
-  void printNumber(long, uint8_t = 2);
-  void printFloat(double, uint8_t = 2, uint8_t = DEC);
+  void printNumber(long, uint8_t base = DEC, bool flip = false);
+  void printFloat(double, uint8_t fracDigits = 2, uint8_t base = DEC, bool flip = false);
   void printError(void);
 
   void writeColon(void);

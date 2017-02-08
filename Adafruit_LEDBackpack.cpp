@@ -50,6 +50,26 @@ static const uint8_t numbertable[] = {
 	0x71, /* F */
 };
 
+// Numbers printed upside down
+static const uint8_t flipNumberTable[] = {
+  0b0000000000111111, // 0
+  0b0000000000110000, // 1
+  0b0000000001011011, // 2
+  0b0000000001111001, // 3
+  0b0000000001110100, // 4
+  0b0000000001101101, // 5
+  0b0000000001101111, // 6
+  0b0000000000111000, // 7
+  0b0000000001111111, // 8
+  0b0000000001111100, // 9
+  0b0000000001111110, // A
+  0b0000000001100111, // b
+  0b0000000000001111, // C
+  0b0000000001110011, // d
+  0b0000000001001111, // E
+  0b0000000001001110  // F
+};
+
 static const uint16_t alphafonttable[] PROGMEM =  {
 
 0b0000000000000001,
@@ -588,10 +608,14 @@ void Adafruit_7segment::writeColon(void) {
     Wire.endTransmission();
 }
 
-void Adafruit_7segment::writeDigitNum(uint8_t d, uint8_t num, boolean dot) {
+void Adafruit_7segment::writeDigitNum(uint8_t d, uint8_t num, boolean dot, bool flip) {
   if (d > 4) return;
 
-  writeDigitRaw(d, numbertable[num] | (dot << 7));
+  if (flip) {
+    writeDigitRaw((int)(4-d), flipNumberTable[num] | (dot << 7)); 
+  } else {
+    writeDigitRaw(d, numbertable[num] | (dot << 7));
+  }
 }
 
 void Adafruit_7segment::print(long n, int base)
@@ -599,12 +623,12 @@ void Adafruit_7segment::print(long n, int base)
   printNumber(n, base);
 }
 
-void Adafruit_7segment::printNumber(long n, uint8_t base)
+void Adafruit_7segment::printNumber(long n, uint8_t base, bool flip)
 {
-    printFloat(n, 0, base);
+    printFloat(n, 0, base, flip);
 }
 
-void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
+void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base, bool flip) 
 { 
   uint8_t numericDigits = 4;   // available digits on display
   boolean isNegative = false;  // true if the number is negative
@@ -647,21 +671,35 @@ void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base)
     if (displayNumber)  //if displayNumber is not 0
     {
       for(uint8_t i = 0; displayNumber || i <= fracDigits; ++i) {
-        boolean displayDecimal = (fracDigits != 0 && i == fracDigits);
-        writeDigitNum(displayPos--, displayNumber % base, displayDecimal);
+        boolean displayDecimal = (fracDigits != 0 && ((flip && (i+1 == fracDigits)) || (!flip && (i == fracDigits))));
+        writeDigitNum(displayPos--, displayNumber % base, displayDecimal, flip);
         if(displayPos == 2) writeDigitRaw(displayPos--, 0x00);
         displayNumber /= base;
       }
     }
     else {
-      writeDigitNum(displayPos--, 0, false);
+      writeDigitNum(displayPos--, 0, false, flip);
     }
   
     // display negative sign if negative
-    if(isNegative) writeDigitRaw(displayPos--, 0x40);
+    if(isNegative) {
+      if (flip) {
+        writeDigitRaw((4-displayPos), 0x40);
+        displayPos--;
+      } else {
+        writeDigitRaw(displayPos--, 0x40);
+      }
+    }
   
     // clear remaining display positions
-    while(displayPos >= 0) writeDigitRaw(displayPos--, 0x00);
+    if (flip) {
+      while(displayPos >= 0) {
+        writeDigitRaw((4-displayPos), 0x00);
+        displayPos--;
+      }
+    } else {
+      while(displayPos >= 0) writeDigitRaw(displayPos--, 0x00);
+    }
   }
 }
 
